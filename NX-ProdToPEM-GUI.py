@@ -341,7 +341,7 @@ class UpdateManagerDialog(QDialog):
             assets = rel.get("assets", [])
             download_url = next((a["browser_download_url"] for a in assets if a["name"] == "NX-ProdToPEM-GUI.py"), None)
             if not download_url:
-                tag = rel.get("tag_name", "v1.1.0")
+                tag = rel.get("tag_name", "v1.1.1")
                 download_url = f"https://raw.githubusercontent.com/JeremKOYTB/NX-ProdToPEM/{tag}/NX-ProdToPEM-GUI.py"
 
         if download_url:
@@ -565,7 +565,7 @@ class MainWindowProdToPEM(QMainWindow):
         self.config_allowed = True
         self.is_restarting = False
         self.startup_warning_accepted = False
-        self.app_version = "1.1.0"
+        self.app_version = "1.1.1"
         
         self.spinner_frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
         self.spinner_idx = 0
@@ -1304,7 +1304,7 @@ def handle_interrupt(window_instance):
 if __name__ == "__main__":
     if sys.platform == "win32":
         import ctypes
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("JeremKOYTB.NXProdToPEM.Gui.1.1.0")
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("JeremKOYTB.NXProdToPEM.Gui.1.1.1")
 
     app = QApplication(sys.argv)
     app.setStyleSheet(get_stylesheet(darkdetect.isDark()))
@@ -1323,6 +1323,6 @@ if __name__ == "__main__":
     if window.is_restarting:
         del window
         del app
-        os.execv(sys.executable, [sys.executable] + sys.argv)
+        os.execv(sys.executable, ['"' + sys.executable + '"'] + sys.argv)
         
     sys.exit(exit_code)

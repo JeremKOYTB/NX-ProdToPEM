@@ -3,7 +3,7 @@
 A utility designed to decrypt PRODINFO.bin and generate a valid certificat.pem for SSL/TLS authentication.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/e6854955-1195-423f-ae7c-4551416c26b6" width="200" alt="ProdToPEM" />
+  <img src="https://github.com/user-attachments/assets/9bc591a4-4a5d-4769-bd48-82fb28f99001" width="200" alt="ProdToPEM" />
 </p>
 
 And you can use it, for example, for my [TriCoreDownloader](https://github.com/JeremKOYTB/TriCoreDownloader) :)

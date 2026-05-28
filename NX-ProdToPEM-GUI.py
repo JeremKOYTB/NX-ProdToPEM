@@ -439,7 +439,7 @@ class UpdateManagerDialog(QDialog):
             assets = rel.get("assets", [])
             download_url = next((a["browser_download_url"] for a in assets if a["name"] == "NX-ProdToPEM-GUI.py"), None)
             if not download_url:
-                tag = rel.get("tag_name", "v1.2.0")
+                tag = rel.get("tag_name", "v1.2.1")
                 download_url = f"https://raw.githubusercontent.com/JeremKOYTB/NX-ProdToPEM/{tag}/NX-ProdToPEM-GUI.py"
 
         if download_url:
@@ -586,13 +586,18 @@ def extract_and_build_pem(cal0_data, ssl_rsa_kek, logger=None):
         logger.log("[LOG] Decoding ASN.1 DER certificate.")
     cert = x509.load_der_x509_certificate(cert_data, default_backend())
     
+    try:
+        expiration_date = cert.not_valid_after_utc
+    except AttributeError:
+        expiration_date = cert.not_valid_after
+
     if logger:
         logger.log("[LOG] Parsing x509 structure to extract metadata...")
         logger.log(f"[LOG] Subject: {cert.subject.rfc4514_string()}")
         logger.log(f"[LOG] Issuer: {cert.issuer.rfc4514_string()}")
-        logger.log(f"[LOG] Valid until: {cert.not_valid_after}")
+        logger.log(f"[LOG] Valid until: {expiration_date}")
 
-    cert_info = f"Subject: {cert.subject.rfc4514_string()}\nIssuer: {cert.issuer.rfc4514_string()}\nExpiration: {cert.not_valid_after}"
+    cert_info = f"Subject: {cert.subject.rfc4514_string()}\nIssuer: {cert.issuer.rfc4514_string()}\nExpiration: {expiration_date}"
     
     if logger:
         logger.log("[LOG] Isolating encrypted private RSA key parameters at offset 0x3AE0.")
@@ -688,7 +693,7 @@ class MainWindowProdToPEM(QMainWindow):
         self.config_allowed = True
         self.is_restarting = False
         self.startup_warning_accepted = False
-        self.app_version = "1.2.0"
+        self.app_version = "1.2.1"
         
         self.spinner_frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
         self.spinner_idx = 0
@@ -916,10 +921,10 @@ class MainWindowProdToPEM(QMainWindow):
             self.logger.log(f"[LOG] Querying GitHub API for releases (Auto: {auto})...")
             
         self.update_thread = UpdateCheckerThread()
-        self.update_thread.finished.connect(self.process_update_result)
+        self.update_thread.finished.connect(self.process_update_check_result)
         self.update_thread.start()
 
-    def process_update_result(self, data, error_str):
+    def process_update_check_result(self, data, error_str):
         self.spinner_timer.stop()
         self.btn_update.setEnabled(True)
         
@@ -1363,15 +1368,22 @@ class MainWindowProdToPEM(QMainWindow):
         pem_output = os.path.join(out_dir, "certificate.pem")
         if self.btn_advanced.isChecked():
             self.logger.log(f"[LOG] Writing {len(pem_data)} bytes to {pem_output}...")
+            self.logger.log("[LOG] Done!")
             
         with open(pem_output, "wb") as f_out:
             f_out.write(pem_data)
             
-        success_msg = (
-            "The certificate.pem file has been successfully generated!\n\n"
-            f"Certificate details:\n{cert_info}\n\n"
-            "Do you want to safely close the application now to clean up resources?"
-        )
+        if self.btn_advanced.isChecked():
+            success_msg = (
+                "The certificate.pem file has been successfully generated!\n\n"
+                f"Certificate details:\n{cert_info}\n\n"
+                "Do you want to safely close the application now to clean up resources?"
+            )
+        else:
+            success_msg = (
+                "The certificate.pem file has been successfully generated!\n\n"
+                "Do you want to safely close the application now to clean up resources?"
+            )
         
         box = QMessageBox(QMessageBox.Icon.Information, "Extraction Successful", success_msg, QMessageBox.StandardButton.NoButton, self)
         btn_yes = box.addButton("Yes", QMessageBox.ButtonRole.YesRole)
@@ -1488,7 +1500,7 @@ def handle_interrupt(window_instance):
 if __name__ == "__main__":
     if sys.platform == "win32":
         import ctypes
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("JeremKOYTB.NXProdToPEM.Gui.1.2.0")
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("JeremKOYTB.NXProdToPEM.Gui.1.2.1")
 
     app = QApplication(sys.argv)
     app.setStyleSheet(get_stylesheet(darkdetect.isDark()))

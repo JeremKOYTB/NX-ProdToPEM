@@ -42,7 +42,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QFrame, QMessageBox, QFileDialog, QSizePolicy, QGridLayout,
                              QGraphicsOpacityEffect, QDialog, QComboBox, QCheckBox)
 from PyQt6.QtCore import Qt, QTimer, QByteArray, QThread, pyqtSignal, QPropertyAnimation, QSize
-from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtGui import QIcon, QPixmap, QColor, QDragEnterEvent, QDropEvent
 import darkdetect
 
 BASE_FONT = "\"Segoe UI Variable\", \"Segoe UI\", \"Roboto\", sans-serif"
@@ -86,13 +86,17 @@ def get_stylesheet(is_dark):
     #btnHelpHidden {{ background-color: transparent; border: none; min-width: 22px; max-width: 22px; min-height: 22px; max-height: 22px; }}
     #btnExecute {{ background-color: {c['accent']}; color: {c['btn_text']}; font-size: 11pt; font-weight: bold; padding: 10px 24px; border-radius: 6px; border: none; min-width: 200px; }}
     #btnExecute:hover {{ background-color: {c['accent_hover']}; color: {c['btn_hover_text']}; }}
-    #btnAdvancedLogs, #btnRestart {{ font-size: 9pt; font-weight: normal; padding: 4px 12px; border-radius: 4px; min-width: 110px; max-width: 110px; }}
+    #btnExecute:disabled {{ background-color: {c['border']}; color: {c['text_dim']}; }}
+    #btnAdvancedLogs, #btnRestart, #btnResetConfig, #btnReportIssue {{ font-size: 9pt; font-weight: normal; padding: 4px 12px; border-radius: 4px; min-width: 110px; max-width: 110px; }}
     #btnAdvancedLogs {{ background-color: transparent; border: 1px solid {c['border']}; color: {c['text_dim']}; }}
     #btnAdvancedLogs:checked {{ background-color: {c['accent']}; border-color: {c['accent']}; color: {c['btn_text']}; font-weight: bold; }}
     #btnAdvancedLogs:checked:hover {{ background-color: {c['accent_hover']}; border-color: {c['accent_hover']}; color: {c['btn_hover_text']}; }}
     #btnAdvancedLogs:hover:!checked {{ color: {c['text_title']}; border-color: {c['text_dim']}; }}
     #btnRestart {{ background-color: transparent; border: 1px solid {c['warn']}; color: {c['warn']}; }}
     #btnRestart:hover {{ background-color: {c['warn_hover']}; color: {c['warn_border']}; border-color: {c['warn_border']}; }}
+    #btnResetConfig, #btnReportIssue {{ background-color: transparent; border: 1px solid {c['text_dim']}; color: {c['text_dim']}; }}
+    #btnResetConfig:hover {{ color: {c['warn']}; border-color: {c['warn']}; background-color: {c['warn_hover']}; }}
+    #btnReportIssue:hover {{ color: {c['accent']}; border-color: {c['accent']}; background-color: {c['border_hover']}; }}
     #btnSocial {{ background-color: transparent; border: none; padding: 2px; border-radius: 4px; }}
     #btnSocial:hover {{ background-color: {c['border_hover']}; }}
     """
@@ -113,6 +117,100 @@ SVG_GITHUB_LIGHT = b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 2
 
 SVG_DISCORD_DARK = b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="#E8E8E8" d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.094 13.094 0 01-1.873-.894.077.077 0 01-.008-.128c.126-.093.252-.19.372-.287a.075.075 0 01.077-.011c3.92 1.793 8.18 1.793 12.061 0a.073.073 0 01.078.009c.12.099.246.195.373.289a.075.075 0 01-.006.127 12.298 12.298 0 01-1.873.894.077.077 0 01-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03a.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.156 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.156 2.418z"/></svg>"""
 SVG_DISCORD_LIGHT = b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="#1D1D1F" d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.094 13.094 0 01-1.873-.894.077.077 0 01-.008-.128c.126-.093.252-.19.372-.287a.075.075 0 01.077-.011c3.92 1.793 8.18 1.793 12.061 0a.073.073 0 01.078.009c.12.099.246.195.373.289a.075.075 0 01-.006.127 12.298 12.298 0 01-1.873.894.077.077 0 01-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03a.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.156 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.156 2.418z"/></svg>"""
+
+class DropLineEdit(QLineEdit):
+    def __init__(self, expected_filename=None, is_directory=False, parent=None):
+        super().__init__(parent)
+        self.setAcceptDrops(True)
+        self.expected_filename = expected_filename
+        self.is_directory = is_directory
+
+    def dragEnterEvent(self, e: QDragEnterEvent):
+        if e.mimeData().hasUrls():
+            e.acceptProposedAction()
+
+    def dropEvent(self, e: QDropEvent):
+        urls = e.mimeData().urls()
+        if urls:
+            filepath = urls[0].toLocalFile()
+            if self.is_directory:
+                if os.path.isdir(filepath):
+                    self.setText(filepath)
+                else:
+                    QMessageBox.critical(self, "Invalid Drop", "A directory is required for this field.")
+            else:
+                if os.path.isfile(filepath):
+                    actual_name = os.path.basename(filepath)
+                    if self.expected_filename and actual_name.lower() != self.expected_filename.lower():
+                        msg = f"The dropped file is named '{actual_name}' instead of '{self.expected_filename}'.\n\nDo you want to use it anyway?"
+                        box = QMessageBox(QMessageBox.Icon.Question, "Unexpected Filename", msg, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, self.window())
+                        if box.exec() == QMessageBox.StandardButton.Yes:
+                            self.setText(filepath)
+                    else:
+                        self.setText(filepath)
+                else:
+                    QMessageBox.critical(self, "Invalid Drop", "A file is required for this field.")
+
+class ThreadLogger:
+    def __init__(self, signal):
+        self.signal = signal
+    def log(self, msg):
+        self.signal.emit(msg)
+
+class ConversionThread(QThread):
+    log_signal = pyqtSignal(str)
+    success_signal = pyqtSignal(bytes, str, str)
+    error_signal = pyqtSignal(str)
+
+    def __init__(self, p_path, k_path, out_dir):
+        super().__init__()
+        self.p_path = p_path
+        self.k_path = k_path
+        self.out_dir = out_dir
+
+    def run(self):
+        thread_log = ThreadLogger(self.log_signal)
+        try:
+            thread_log.log(f"[LOG] Cryptographic engine execution started in thread {int(self.currentThreadId())}.")
+            thread_log.log(f"[LOG] Performing strict memory allocation constraints for {self.p_path}")
+            
+            with open(self.p_path, 'rb') as f:
+                raw_prodinfo_data = f.read()
+            
+            thread_log.log(f"[LOG] Memory buffer allocated: {len(raw_prodinfo_data)} bytes read from PRODINFO.")
+            
+            is_cal0_clear = (raw_prodinfo_data[:4] == b"CAL0")
+            required_keys = {'ssl_rsa_kek'}
+            if not is_cal0_clear:
+                thread_log.log("[LOG] Magic CAL0 not detected. Scheduling AES-XTS full sector decryption cycle. Adding 'bis_key_00'.")
+                required_keys.add('bis_key_00')
+
+            keys = get_keys(self.k_path, required_keys, thread_log)
+            ssl_rsa_kek = keys.get('ssl_rsa_kek')
+            if not ssl_rsa_kek: 
+                raise ValueError("The encryption key 'ssl_rsa_kek' is missing from your prod.keys file.")
+
+            if not is_cal0_clear:
+                bis_key_00 = keys.get('bis_key_00')
+                if not bis_key_00: 
+                    raise ValueError("The encryption key 'bis_key_00' is missing from your prod.keys file.")
+                decrypted_data = decrypt_prodinfo(raw_prodinfo_data, bis_key_00, thread_log)
+                if not decrypted_data:
+                    raise ValueError("Failed to decrypt PRODINFO. Invalid file or bad 'bis_key_00'.")
+            else:
+                thread_log.log("[LOG] Plaintext CAL0 payload confirmed. Bypassing AES-XTS routine.")
+                decrypted_data = raw_prodinfo_data
+
+            unified_pem, cert_info = extract_and_build_pem(decrypted_data, ssl_rsa_kek, thread_log)
+            
+            thread_log.log("[LOG] Freeing cryptographic buffers to prevent memory leaks and ensure app stability.")
+            del raw_prodinfo_data
+            del decrypted_data
+            del keys
+
+            self.success_signal.emit(unified_pem, self.out_dir, cert_info)
+        except Exception as e:
+            self.error_signal.emit(str(e))
 
 class UpdateCheckerThread(QThread):
     finished = pyqtSignal(dict, str)
@@ -192,7 +290,7 @@ class AboutDialog(QDialog):
             f"<b>NX-ProdToPEM GUI</b><br>"
             f"Version: {self.version}<br><br>"
             f"Created by JérémKO.<br><br>"
-            f"A utility to decrypt PRODINFO.bin and generate a certificat.pem for SSL/TLS authentication.<br><br>"
+            f"A utility to decrypt PRODINFO.bin and generate a certificate.pem for SSL/TLS authentication.<br><br>"
             f"Thanks to the authors of NxCertDump for the initial research on the CAL0/PRODINFO structure."
         )
         layout.addWidget(info_lbl)
@@ -341,7 +439,7 @@ class UpdateManagerDialog(QDialog):
             assets = rel.get("assets", [])
             download_url = next((a["browser_download_url"] for a in assets if a["name"] == "NX-ProdToPEM-GUI.py"), None)
             if not download_url:
-                tag = rel.get("tag_name", "v1.1.1")
+                tag = rel.get("tag_name", "v1.2.0")
                 download_url = f"https://raw.githubusercontent.com/JeremKOYTB/NX-ProdToPEM/{tag}/NX-ProdToPEM-GUI.py"
 
         if download_url:
@@ -353,6 +451,7 @@ class UpdateManagerDialog(QDialog):
 def get_keys(keys_path, required_keys, logger=None):
     if logger:
         logger.log(f"[LOG] Loading keys from: {keys_path}")
+        logger.log("[LOG] Parsing text stream into hexadecimal map. Encoding context: utf-8.")
     keys = {}
     try:
         with open(keys_path, 'r', encoding='utf-8', errors='ignore') as f:
@@ -381,6 +480,9 @@ def decrypt_prodinfo(encrypted_data, bis_key_00, logger=None):
         logger.log(f"[LOG] Starting AES-XTS decryption (Block size: {hex(sector_size)}, Sectors: {total_sectors}).")
 
     for i in range(0, len(encrypted_data), sector_size):
+        if logger and i % (sector_size * 10) == 0:
+            logger.log(f"[LOG] Decrypting AES-XTS block offset 0x{i:08X} to 0x{i+sector_size:08X}...")
+        
         chunk = encrypted_data[i:i+sector_size]
         if len(chunk) < 16:
             decrypted_data += chunk
@@ -395,7 +497,8 @@ def decrypt_prodinfo(encrypted_data, bis_key_00, logger=None):
 
     if decrypted_data[:4] != b"CAL0":
         if logger:
-            logger.log(f"[LOG] Signature mismatch. Found: {decrypted_data[:4]}")
+            viewer = decrypted_data[:4]
+            logger.log(f"[LOG] Signature mismatch. Found: {viewer}")
         return None
         
     if logger:
@@ -406,6 +509,7 @@ def decrypt_prodinfo(encrypted_data, bis_key_00, logger=None):
 def recover_rsa_private_key(n, e, d, logger=None):
     if logger:
         logger.log(f"[LOG] Reconstructing RSA key (N: {n.bit_length()} bits, D: {d.bit_length()} bits).")
+        logger.log(f"[LOG] Calculating Euler's totient approximation matrix for D length {d.bit_length()}...")
         
     k = d * e - 1
     t, r = 0, k
@@ -416,6 +520,9 @@ def recover_rsa_private_key(n, e, d, logger=None):
 
     cracked = False
     for attempt in range(1, 101):
+        if logger and attempt % 25 == 0:
+            logger.log(f"[LOG] Factorization loop checkpoint: attempt {attempt}/100...")
+            
         g = 2 if attempt == 1 else 3
         y = pow(g, r, n)
         if y == 1 or y == n - 1:
@@ -480,6 +587,14 @@ def extract_and_build_pem(cal0_data, ssl_rsa_kek, logger=None):
     cert = x509.load_der_x509_certificate(cert_data, default_backend())
     
     if logger:
+        logger.log("[LOG] Parsing x509 structure to extract metadata...")
+        logger.log(f"[LOG] Subject: {cert.subject.rfc4514_string()}")
+        logger.log(f"[LOG] Issuer: {cert.issuer.rfc4514_string()}")
+        logger.log(f"[LOG] Valid until: {cert.not_valid_after}")
+
+    cert_info = f"Subject: {cert.subject.rfc4514_string()}\nIssuer: {cert.issuer.rfc4514_string()}\nExpiration: {cert.not_valid_after}"
+    
+    if logger:
         logger.log("[LOG] Isolating encrypted private RSA key parameters at offset 0x3AE0.")
     ssl_ext_key = cal0_data[0x3AE0:0x3AE0+0x110]
     iv = ssl_ext_key[:0x10]
@@ -524,15 +639,17 @@ def extract_and_build_pem(cal0_data, ssl_rsa_kek, logger=None):
         format=serialization.PrivateFormat.TraditionalOpenSSL,
         encryption_algorithm=serialization.NoEncryption()
     )
-    return clean_key + cert.public_bytes(serialization.Encoding.PEM)
+    return clean_key + cert.public_bytes(serialization.Encoding.PEM), cert_info
 
 class TerminalLineRewriter:
     def __init__(self):
         self.last_state = None
         self.line_count = 0
+        self.history = []
 
     def log(self, text):
         print(text)
+        self.history.append(text)
         self.line_count += 1
 
     def force_clear(self):
@@ -545,10 +662,16 @@ class TerminalLineRewriter:
     def set_verbose_state(self, active):
         if self.last_state == active: return
         self.force_clear()
-        print("[LOG] Verbose mode activated." if active else "[LOG] Verbose mode deactivated.")
+        msg = "[LOG] Verbose mode activated." if active else "[LOG] Verbose mode deactivated."
+        print(msg)
+        self.history.append(msg)
         self.line_count = 1
         sys.stdout.flush()
         self.last_state = active
+
+    def export(self, filepath):
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write("\n".join(self.history))
 
 class MainWindowProdToPEM(QMainWindow):
     def __init__(self):
@@ -565,13 +688,17 @@ class MainWindowProdToPEM(QMainWindow):
         self.config_allowed = True
         self.is_restarting = False
         self.startup_warning_accepted = False
-        self.app_version = "1.1.1"
+        self.app_version = "1.2.0"
         
         self.spinner_frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
         self.spinner_idx = 0
         self.spinner_timer = QTimer(self)
         self.spinner_timer.timeout.connect(self.update_spinner)
         self.is_auto_check = False
+        
+        self.rainbow_timer = QTimer(self)
+        self.rainbow_timer.timeout.connect(self.update_rainbow)
+        self.rainbow_hue = 0
         
         self.init_ui()
         self.load_configuration_file()
@@ -598,11 +725,11 @@ class MainWindowProdToPEM(QMainWindow):
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(15)
         
-        card_frame = QFrame(self)
-        card_frame.setObjectName("Card")
-        card_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.card_frame = QFrame(self)
+        self.card_frame.setObjectName("Card")
+        self.card_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         
-        card_layout = QVBoxLayout(card_frame)
+        card_layout = QVBoxLayout(self.card_frame)
         card_layout.setContentsMargins(15, 12, 15, 12)
         card_layout.setSpacing(10)
         
@@ -663,7 +790,7 @@ class MainWindowProdToPEM(QMainWindow):
         
         card_layout.addLayout(header_layout)
         
-        grid_container = QWidget(card_frame)
+        grid_container = QWidget(self.card_frame)
         grid_container.setObjectName("CardGrid")
         grid_layout = QGridLayout(grid_container)
         grid_layout.setContentsMargins(0, 0, 0, 0)
@@ -672,7 +799,7 @@ class MainWindowProdToPEM(QMainWindow):
         
         prodinfo_lbl = QLabel("PRODINFO.bin path:", grid_container)
         prodinfo_lbl.setMinimumWidth(130)
-        self.prodinfo_le = QLineEdit(grid_container)
+        self.prodinfo_le = DropLineEdit(expected_filename="PRODINFO.bin", is_directory=False, parent=grid_container)
         btn_browse_prodinfo = QPushButton("Browse...", grid_container)
         btn_browse_prodinfo.clicked.connect(self.browse_prodinfo)
         btn_help_prodinfo = QPushButton("?", grid_container)
@@ -686,7 +813,7 @@ class MainWindowProdToPEM(QMainWindow):
         
         keys_lbl = QLabel("prod.keys path:", grid_container)
         keys_lbl.setMinimumWidth(130)
-        self.keys_le = QLineEdit(grid_container)
+        self.keys_le = DropLineEdit(expected_filename="prod.keys", is_directory=False, parent=grid_container)
         btn_browse_keys = QPushButton("Browse...", grid_container)
         btn_browse_keys.clicked.connect(self.browse_keys)
         btn_help_keys = QPushButton("?", grid_container)
@@ -700,7 +827,7 @@ class MainWindowProdToPEM(QMainWindow):
 
         output_lbl = QLabel("Destination folder:", grid_container)
         output_lbl.setMinimumWidth(130)
-        self.output_le = QLineEdit(grid_container)
+        self.output_le = DropLineEdit(expected_filename=None, is_directory=True, parent=grid_container)
         self.output_le.setPlaceholderText("Optional")
         btn_browse_output = QPushButton("Browse...", grid_container)
         btn_browse_output.clicked.connect(self.browse_output)
@@ -714,38 +841,63 @@ class MainWindowProdToPEM(QMainWindow):
         grid_layout.addWidget(btn_help_hidden, 2, 3, Qt.AlignmentFlag.AlignVCenter)
         
         card_layout.addWidget(grid_container)
-        main_layout.addWidget(card_frame)
+        main_layout.addWidget(self.card_frame)
         
         bottom_container = QWidget(central_widget)
         bottom_layout = QHBoxLayout(bottom_container)
         bottom_layout.setContentsMargins(0, 0, 0, 0)
         
+        left_bottom_layout = QVBoxLayout()
+        left_bottom_layout.setSpacing(4)
+        
         self.btn_restart = QPushButton("Restart App", bottom_container)
         self.btn_restart.setObjectName("btnRestart")
         self.btn_restart.clicked.connect(self.restart_application)
+        
+        self.btn_reset_config = QPushButton("Reset Config", bottom_container)
+        self.btn_reset_config.setObjectName("btnResetConfig")
+        self.btn_reset_config.clicked.connect(self.reset_configuration_file)
+        
+        left_bottom_layout.addWidget(self.btn_restart)
+        left_bottom_layout.addWidget(self.btn_reset_config)
+        
+        self.btn_execute = QPushButton("Generate certificate.pem", bottom_container)
+        self.btn_execute.setObjectName("btnExecute")
+        self.btn_execute.clicked.connect(self.process_conversion)
+        
+        right_bottom_layout = QVBoxLayout()
+        right_bottom_layout.setSpacing(4)
         
         self.btn_advanced = QPushButton("Advanced Logs", bottom_container)
         self.btn_advanced.setObjectName("btnAdvancedLogs")
         self.btn_advanced.setCheckable(True)
         self.btn_advanced.clicked.connect(self.toggle_advanced_logs)
         
-        btn_execute = QPushButton("Generate certificat.pem", bottom_container)
-        btn_execute.setObjectName("btnExecute")
-        btn_execute.clicked.connect(self.process_conversion)
+        self.btn_report_issue = QPushButton("Report Issue", bottom_container)
+        self.btn_report_issue.setObjectName("btnReportIssue")
+        self.btn_report_issue.clicked.connect(lambda: webbrowser.open("https://github.com/JeremKOYTB/NX-ProdToPEM/issues/new"))
         
-        bottom_layout.addWidget(self.btn_restart, 0, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        right_bottom_layout.addWidget(self.btn_advanced)
+        right_bottom_layout.addWidget(self.btn_report_issue)
+        
+        bottom_layout.addLayout(left_bottom_layout)
         bottom_layout.addStretch(1)
-        bottom_layout.addWidget(btn_execute, 0, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
+        bottom_layout.addWidget(self.btn_execute, 0, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
         bottom_layout.addStretch(1)
-        bottom_layout.addWidget(self.btn_advanced, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        bottom_layout.addLayout(right_bottom_layout)
         
         main_layout.addWidget(bottom_container)
         
-        self.setFixedSize(720, 310)
+        self.setFixedSize(720, 350)
 
     def update_spinner(self):
         self.spinner_idx = (self.spinner_idx + 1) % len(self.spinner_frames)
         self.lbl_spinner.setText(self.spinner_frames[self.spinner_idx])
+        
+    def update_rainbow(self):
+        self.rainbow_hue = (self.rainbow_hue + 5) % 360
+        color = QColor.fromHsv(self.rainbow_hue, 200, 255).name()
+        self.card_frame.setStyleSheet(f"QFrame#Card {{ border: 2px solid {color}; }}")
 
     def manual_check_updates(self):
         if self.btn_advanced.isChecked():
@@ -816,7 +968,7 @@ class MainWindowProdToPEM(QMainWindow):
                 msg = "The latest update data could not be found on GitHub.\n\nThere might be an issue with the currently published release. Please verify the status or open an issue on the repository.\n\nWould you like to open the repository to check?"
                 if QMessageBox(QMessageBox.Icon.Warning, "Release Not Found", msg, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, self).exec() == QMessageBox.StandardButton.Yes:
                     webbrowser.open("https://github.com/JeremKOYTB/NX-ProdToPEM")
-            return
+                return
 
         download_url = next((a["browser_download_url"] for a in assets if a["name"] == "NX-ProdToPEM-GUI.py"), None)
         if not download_url:
@@ -998,7 +1150,8 @@ class MainWindowProdToPEM(QMainWindow):
     def check_startup_warning(self):
         if not self.startup_warning_accepted:
             msg = (
-                "Welcome!\n\nThis software is provided 'as-is'. In the event of any errors or console bans, "
+                "Welcome!\n\n"
+                "This software is provided 'as-is'. In the event of any errors or console bans, "
                 "the author declines all responsibility.\n\n"
                 "This tool has been validated on an Erista Switch running system version 22.1.0, "
                 "but any other Switch + OS configurations are not 100% guaranteed to be OK.\n"
@@ -1045,7 +1198,7 @@ class MainWindowProdToPEM(QMainWindow):
             if data.get("version") != self.app_version:
                 if self.btn_advanced.isChecked():
                     self.logger.log("[LOG] Version mismatch in config. Updating JSON structure.")
-                QTimer.singleShot(100, lambda: QMessageBox.warning(self, "!", "The config-prodtopem.txt file has been updated."))
+                QTimer.singleShot(100, lambda: QMessageBox.warning(self, "Configuration Note", "The config-prodtopem.txt file has been updated."))
                 self.save_configuration_file()
                 
         except Exception:
@@ -1076,6 +1229,29 @@ class MainWindowProdToPEM(QMainWindow):
         except Exception:
             self.config_allowed = False
             QMessageBox.warning(self, "Saving Error", "An error occurred while saving the configuration settings.")
+
+    def reset_configuration_file(self):
+        if self.btn_advanced.isChecked():
+            self.logger.log("[LOG] Resetting configuration file fields as requested by user.")
+        
+        self.prodinfo_le.blockSignals(True)
+        self.keys_le.blockSignals(True)
+        self.output_le.blockSignals(True)
+        
+        self.prodinfo_le.clear()
+        self.keys_le.clear()
+        self.output_le.clear()
+        
+        self.prodinfo_le.blockSignals(False)
+        self.keys_le.blockSignals(False)
+        self.output_le.blockSignals(False)
+        
+        self.save_configuration_file()
+        
+        if self.btn_advanced.isChecked():
+            self.logger.log("[LOG] Configuration cleared and UI updated successfully.")
+            
+        QMessageBox.information(self, "Config Reset", "Configuration fields have been completely cleared and reset.")
 
     def fallback_auto_detect(self):
         if self.btn_advanced.isChecked():
@@ -1135,10 +1311,16 @@ class MainWindowProdToPEM(QMainWindow):
         self.logger.set_verbose_state(self.btn_advanced.isChecked())
         self.save_configuration_file()
 
+    def trigger_log_export(self):
+        filepath, _ = QFileDialog.getSaveFileName(self, "Save Logs", "nx_prodtopem_logs.txt", "Text Files (*.txt);;All Files (*.*)")
+        if filepath:
+            self.logger.export(filepath)
+            QMessageBox.information(self, "Logs Exported", f"Logs successfully saved to:\n{filepath}")
+
     def restart_application(self):
         if self.btn_advanced.isChecked():
             self.logger.log("[LOG] User requested manual application restart.")
-        if QMessageBox(QMessageBox.Icon.Question, "Confirm Restart", "Are you sure you want to completely restart the application?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, self).exec() == QMessageBox.StandardButton.Yes:
+        if QMessageBox(QMessageBox.Icon.Question, "Confirm Restart", "Are you sure you want to completely restart NX-ProdToPEM GUI?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, self).exec() == QMessageBox.StandardButton.Yes:
             self.is_restarting = True
             self.logger.force_clear()
             QApplication.quit()
@@ -1169,6 +1351,71 @@ class MainWindowProdToPEM(QMainWindow):
             if self.btn_advanced.isChecked():
                 self.logger.log("[LOG] Opening web browser: THZoria/Lockpick_RCMaster")
             webbrowser.open("https://github.com/THZoria/Lockpick_RCMaster")
+
+    def handle_thread_log(self, msg):
+        if self.btn_advanced.isChecked():
+            self.logger.log(msg)
+
+    def handle_conversion_success(self, pem_data, out_dir, cert_info):
+        self.btn_execute.setEnabled(True)
+        self.rainbow_timer.start(50)
+        
+        pem_output = os.path.join(out_dir, "certificate.pem")
+        if self.btn_advanced.isChecked():
+            self.logger.log(f"[LOG] Writing {len(pem_data)} bytes to {pem_output}...")
+            
+        with open(pem_output, "wb") as f_out:
+            f_out.write(pem_data)
+            
+        success_msg = (
+            "The certificate.pem file has been successfully generated!\n\n"
+            f"Certificate details:\n{cert_info}\n\n"
+            "Do you want to safely close the application now to clean up resources?"
+        )
+        
+        box = QMessageBox(QMessageBox.Icon.Information, "Extraction Successful", success_msg, QMessageBox.StandardButton.NoButton, self)
+        btn_yes = box.addButton("Yes", QMessageBox.ButtonRole.YesRole)
+        btn_no = box.addButton("No", QMessageBox.ButtonRole.NoRole)
+        
+        btn_save_logs = None
+        if self.btn_advanced.isChecked():
+            btn_save_logs = box.addButton("Save Logs to File", QMessageBox.ButtonRole.ActionRole)
+            
+        box.setDefaultButton(btn_yes)
+        box.exec()
+        
+        if box.clickedButton() == btn_save_logs:
+            self.trigger_log_export()
+            self.rainbow_timer.stop()
+            self.card_frame.setStyleSheet("")
+        elif box.clickedButton() == btn_yes:
+            self.window().logger.log("[LOG] Executing safe teardown to prevent memory leaks and ensure app stability.")
+            QApplication.quit()
+        else:
+            self.rainbow_timer.stop()
+            self.card_frame.setStyleSheet("")
+
+    def handle_conversion_error(self, err_msg):
+        self.btn_execute.setEnabled(True)
+        if self.btn_advanced.isChecked():
+            self.logger.log(f"[LOG] Critical Thread Error: {err_msg}")
+            
+        error_msg = f"An issue occurred during execution:\n\n{err_msg}\n\nWould you like to open the issue tracker?"
+        box = QMessageBox(QMessageBox.Icon.Critical, "Critical Error", error_msg, QMessageBox.StandardButton.NoButton, self)
+        btn_yes = box.addButton("Yes", QMessageBox.ButtonRole.YesRole)
+        btn_no = box.addButton("No", QMessageBox.ButtonRole.NoRole)
+        
+        btn_save_logs = None
+        if self.btn_advanced.isChecked():
+            btn_save_logs = box.addButton("Save Logs to File", QMessageBox.ButtonRole.ActionRole)
+            
+        box.setDefaultButton(btn_no)
+        box.exec()
+        
+        if box.clickedButton() == btn_save_logs:
+            self.trigger_log_export()
+        elif box.clickedButton() == btn_yes: 
+            webbrowser.open("https://github.com/JeremKOYTB/NX-ProdToPEM/issues/new")
 
     def process_conversion(self):
         self.save_configuration_file()
@@ -1207,96 +1454,33 @@ class MainWindowProdToPEM(QMainWindow):
                 self.save_configuration_file()
             else: return
 
-        pem_output = os.path.join(out_dir, "certificat.pem")
+        pem_output = os.path.join(out_dir, "certificate.pem")
         if is_verbose:
             self.logger.log(f"[LOG] Output target: '{pem_output}'")
         
         if os.path.exists(pem_output):
             if is_verbose:
-                self.logger.log("[LOG] certificat.pem already exists. Prompting user for overwrite confirmation.")
-            if QMessageBox(QMessageBox.Icon.Warning, "File Conflict", "A 'certificat.pem' file already exists in the selected destination folder.\n\nDo you want to overwrite it?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, self).exec() != QMessageBox.StandardButton.Yes:
+                self.logger.log("[LOG] certificate.pem already exists. Prompting user for overwrite confirmation.")
+            if QMessageBox(QMessageBox.Icon.Warning, "File Conflict", "A 'certificate.pem' file already exists in the selected destination folder.\n\nDo you want to overwrite it?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, self).exec() != QMessageBox.StandardButton.Yes:
                 if is_verbose:
                     self.logger.log("[LOG] User cancelled overwrite. Operation aborted.")
                 return
 
-        try:
-            if is_verbose:
-                self.logger.log("[LOG] Reading PRODINFO file...")
-            with open(p_path, 'rb') as f:
-                raw_prodinfo_data = f.read()
-            if is_verbose:
-                self.logger.log(f"[LOG] Read {len(raw_prodinfo_data)} bytes from PRODINFO.")
-
-            is_cal0_clear = (raw_prodinfo_data[:4] == b"CAL0")
-            required_keys = {'ssl_rsa_kek'}
-            
-            if is_cal0_clear:
-                if is_verbose:
-                    self.logger.log("[LOG] Plaintext CAL0 magic found. Skipping outer partition decryption.")
-                decrypted_data = raw_prodinfo_data
-            else:
-                if is_verbose:
-                    self.logger.log("[LOG] CAL0 magic not found in plaintext. Assuming encrypted PRODINFO. Adding 'bis_key_00' to required keys.")
-                required_keys.add('bis_key_00')
-
-            keys = get_keys(k_path, required_keys, self.logger if is_verbose else None)
-            ssl_rsa_kek = keys.get('ssl_rsa_kek')
-            if not ssl_rsa_kek: raise ValueError("The encryption key 'ssl_rsa_kek' is missing from your prod.keys file.")
-
-            if not is_cal0_clear:
-                bis_key_00 = keys.get('bis_key_00')
-                if not bis_key_00: raise ValueError("The encryption key 'bis_key_00' is missing from your prod.keys file.")
-                decrypted_data = decrypt_prodinfo(raw_prodinfo_data, bis_key_00, self.logger if is_verbose else None)
-                
-                if not decrypted_data:
-                    raise ValueError(
-                        "Failed to decrypt PRODINFO. Invalid file or bad 'bis_key_00'.\n\n"
-                        "TROUBLESHOOTING:\n"
-                        "- Verify that you used the latest up-to-date Lockpick_RCM payload.\n"
-                        "- Ensure no errors occurred during key extraction.\n\n"
-                        "DO NOT share your PRODINFO or prod.keys online.\n"
-                        "Please open an issue on GitHub to investigate:\n\n"
-                        "https://github.com/JeremKOYTB/NX-ProdToPEM/issues"
-                    )
-                
-            if is_verbose:
-                self.logger.log("[LOG] Starting PEM certificate generation...")
-            unified_pem = extract_and_build_pem(decrypted_data, ssl_rsa_kek, self.logger if is_verbose else None)
-            
-            if is_verbose:
-                self.logger.log(f"[LOG] Writing {len(unified_pem)} bytes to {pem_output}...")
-            with open(pem_output, "wb") as f_out:
-                f_out.write(unified_pem)
-                
-            success_msg = (
-                "The certificat.pem file has been successfully extracted and saved!\n\n"
-                "⚠️ CRITICAL SECURITY WARNING:\n"
-                "NEVER share this file with anyone! It contains your unique device private keys. "
-                "Be extremely careful with it.\n\n"
-                "You can now use this certificate in your target setups, such as TriCoreDownloader:\n\n"
-                "https://github.com/JeremKOYTB/TriCoreDownloader \n\n"
-                "Would you like to open the project repository link now?"
-            )
-            
-            if QMessageBox(QMessageBox.Icon.Information, "Extraction Successful", success_msg, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, self).exec() == QMessageBox.StandardButton.Yes:
-                if is_verbose:
-                    self.logger.log("[LOG] User accepted prompt. Opening web browser: TriCoreDownloader repository.")
-                webbrowser.open("https://github.com/JeremKOYTB/TriCoreDownloader")
-
-        except Exception as e:
-            if is_verbose:
-                self.logger.log(f"[LOG] Critical Error during conversion: {str(e)}")
-            error_box = QMessageBox(QMessageBox.Icon.Critical, "Error", f"An issue occurred while converting your files:\n\n{str(e)}\n\nWould you like to open the issue tracker to report this error?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, self)
-            error_box.setDefaultButton(QMessageBox.StandardButton.No)
-            if error_box.exec() == QMessageBox.StandardButton.Yes: webbrowser.open("https://github.com/JeremKOYTB/NX-ProdToPEM/issues/new")
+        self.btn_execute.setEnabled(False)
+        self.conversion_thread = ConversionThread(p_path, k_path, out_dir)
+        self.conversion_thread.log_signal.connect(self.handle_thread_log)
+        self.conversion_thread.success_signal.connect(self.handle_conversion_success)
+        self.conversion_thread.error_signal.connect(self.handle_conversion_error)
+        self.conversion_thread.start()
 
 def handle_interrupt(window_instance):
     if window_instance.btn_advanced.isChecked():
-        window_instance.logger.log("[LOG] SIGINT (Ctrl+C) detected, prompting user for exit.")
+        window_instance.window().logger.log("[LOG] SIGINT (Ctrl+C) detected, prompting user for exit.")
     box = QMessageBox(QMessageBox.Icon.Question, "Exit?", "Ctrl+C was detected in the terminal.\n\nDo you want to close?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, window_instance)
     box.setDefaultButton(QMessageBox.StandardButton.No)
     box.setWindowFlags(box.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
     if box.exec() == QMessageBox.StandardButton.Yes:
+        window_instance.logger.log("[LOG] Safe shutdown initiated to prevent memory leaks and ensure app stability.")
         window_instance.logger.force_clear()
         QApplication.quit()
         sys.exit(0)
@@ -1304,7 +1488,7 @@ def handle_interrupt(window_instance):
 if __name__ == "__main__":
     if sys.platform == "win32":
         import ctypes
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("JeremKOYTB.NXProdToPEM.Gui.1.1.1")
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("JeremKOYTB.NXProdToPEM.Gui.1.2.0")
 
     app = QApplication(sys.argv)
     app.setStyleSheet(get_stylesheet(darkdetect.isDark()))

@@ -195,8 +195,8 @@ def main():
     group_req.add_argument('-k', '--keys', metavar='<FILE>', type=str, help="Target prod.keys cryptographic configuration")
 
     group_opt = parser.add_argument_group('OPTIONAL PARAMETERS')
-    group_opt.add_argument('-o', '--output', metavar='<PATH>', type=str, default="certificat.pem", 
-                           help="Destination file path for the extracted PEM\n(Default: ./certificat.pem)")
+    group_opt.add_argument('-o', '--output', metavar='<PATH>', type=str, default="certificate.pem", 
+                           help="Destination file path for the extracted PEM\n(Default: ./certificate.pem)")
     group_opt.add_argument('-l', '--logs', action='store_true', help="Enable detailed logs")
     group_opt.add_argument('-h', '--help', action='help', help="Display this help message and exit")
 

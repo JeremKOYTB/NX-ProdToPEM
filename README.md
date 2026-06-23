@@ -1,6 +1,6 @@
 # NX-ProdToPEM (CLI + GUI Version)
 
-A utility designed to decrypt PRODINFO.bin and generate a valid certificate.pem for SSL/TLS authentication.
+A utility designed to decrypt PRODINFO.bin and generate a valid certificat.pem for SSL/TLS authentication.
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/9bc591a4-4a5d-4769-bd48-82fb28f99001" width="200" alt="ProdToPEM" />
@@ -16,7 +16,7 @@ Big thanks to the original authors for the initial research on the CAL0/PRODINFO
 ## ⚠️ Critical Security & Legal Disclaimer
 
 * This tool is provided 'as-is' for research and educational purposes only. I decline all responsibility for any errors, console bans, or restrictions resulting from its use.
-* Sensitive Data: Your PRODINFO.bin, prod.keys, and the resulting certificate.pem contain unique, device-specific credentials. NEVER share these files online. Sharing them is extremely dangerous and can lead to permanent console bans.
+* Sensitive Data: Your PRODINFO.bin, prod.keys, and the resulting certificat.pem contain unique, device-specific credentials. NEVER share these files online. Sharing them is extremely dangerous and can lead to permanent console bans.
 * Vigilance: Be ultra-vigilant with what you do on the internet when you possess these files. Sending them to untrusted parties is a very bad idea.
 
 ---
@@ -56,7 +56,7 @@ pip install PyQt6 cryptography darkdetect
    python NX-ProdToPEM-GUI.py
 2. Select your PRODINFO.bin and prod.keys via the interface.
 3. (Optional) Choose a destination folder for the output file.
-4. Click "Generate certificate.pem".
+4. Click "Generate certificat.pem".
 
 ### CLI Mode
 You can run the script directly from your terminal to utilize the same processing logic:

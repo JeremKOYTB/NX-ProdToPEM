@@ -290,7 +290,7 @@ class AboutDialog(QDialog):
             f"<b>NX-ProdToPEM GUI</b><br>"
             f"Version: {self.version}<br><br>"
             f"Created by JérémKO.<br><br>"
-            f"A utility to decrypt PRODINFO.bin and generate a certificate.pem for SSL/TLS authentication.<br><br>"
+            f"A utility to decrypt PRODINFO.bin and generate a certificat.pem for SSL/TLS authentication.<br><br>"
             f"Thanks to the authors of NxCertDump for the initial research on the CAL0/PRODINFO structure."
         )
         layout.addWidget(info_lbl)
@@ -866,7 +866,7 @@ class MainWindowProdToPEM(QMainWindow):
         left_bottom_layout.addWidget(self.btn_restart)
         left_bottom_layout.addWidget(self.btn_reset_config)
         
-        self.btn_execute = QPushButton("Generate certificate.pem", bottom_container)
+        self.btn_execute = QPushButton("Generate certificat.pem", bottom_container)
         self.btn_execute.setObjectName("btnExecute")
         self.btn_execute.clicked.connect(self.process_conversion)
         
@@ -1365,7 +1365,7 @@ class MainWindowProdToPEM(QMainWindow):
         self.btn_execute.setEnabled(True)
         self.rainbow_timer.start(50)
         
-        pem_output = os.path.join(out_dir, "certificate.pem")
+        pem_output = os.path.join(out_dir, "certificat.pem")
         if self.btn_advanced.isChecked():
             self.logger.log(f"[LOG] Writing {len(pem_data)} bytes to {pem_output}...")
             self.logger.log("[LOG] Done!")
@@ -1375,13 +1375,13 @@ class MainWindowProdToPEM(QMainWindow):
             
         if self.btn_advanced.isChecked():
             success_msg = (
-                "The certificate.pem file has been successfully generated!\n\n"
+                "The certificat.pem file has been successfully generated!\n\n"
                 f"Certificate details:\n{cert_info}\n\n"
                 "Do you want to safely close the application now to clean up resources?"
             )
         else:
             success_msg = (
-                "The certificate.pem file has been successfully generated!\n\n"
+                "The certificat.pem file has been successfully generated!\n\n"
                 "Do you want to safely close the application now to clean up resources?"
             )
         
@@ -1466,14 +1466,14 @@ class MainWindowProdToPEM(QMainWindow):
                 self.save_configuration_file()
             else: return
 
-        pem_output = os.path.join(out_dir, "certificate.pem")
+        pem_output = os.path.join(out_dir, "certificat.pem")
         if is_verbose:
             self.logger.log(f"[LOG] Output target: '{pem_output}'")
         
         if os.path.exists(pem_output):
             if is_verbose:
-                self.logger.log("[LOG] certificate.pem already exists. Prompting user for overwrite confirmation.")
-            if QMessageBox(QMessageBox.Icon.Warning, "File Conflict", "A 'certificate.pem' file already exists in the selected destination folder.\n\nDo you want to overwrite it?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, self).exec() != QMessageBox.StandardButton.Yes:
+                self.logger.log("[LOG] certificat.pem already exists. Prompting user for overwrite confirmation.")
+            if QMessageBox(QMessageBox.Icon.Warning, "File Conflict", "A 'certificat.pem' file already exists in the selected destination folder.\n\nDo you want to overwrite it?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, self).exec() != QMessageBox.StandardButton.Yes:
                 if is_verbose:
                     self.logger.log("[LOG] User cancelled overwrite. Operation aborted.")
                 return

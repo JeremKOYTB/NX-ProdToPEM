@@ -1,3 +1,8 @@
+[NOTE!]
+> NX-ProdToPEM will soon be obsolete and archived, as I feel I could have just integrated it directly into TriCoreDownloader instead of making it a separate script.
+>
+> Stay tuned!
+
 # NX-ProdToPEM (CLI + GUI Version)
 
 A utility designed to decrypt PRODINFO.bin and generate a valid certificat.pem for SSL/TLS authentication.
